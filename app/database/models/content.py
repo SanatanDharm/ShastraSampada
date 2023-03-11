@@ -7,79 +7,86 @@
 """content File created on 04-03-2023"""
 import time
 
-from sqlalchemy import Column, Float, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String, VARCHAR
 from sqlalchemy.orm import relationship
 
 from ..db import Base
 
 
-class Book(Base):
-    """book model"""
-    __tablename__ = 'book'
+class BaseContent(Base):
+    """Base class for all content"""
+    __abstract__ = True
 
     id = Column(Integer, primary_key=True)
-    title = Column(String, nullable=False)
-    author = Column(String, nullable=False)
-    description = Column(String)
+    title = Column(VARCHAR, nullable=False)
+    description = Column(String, nullable=False)
 
     created_at = Column(Float, default=time.time)
     updated_at = Column(Float, default=time.time, onupdate=time.time)
+
+
+class Book(BaseContent):
+    """book model"""
+    __tablename__ = 'book'
+
+    origin = Column(VARCHAR, nullable=False)
     chapters = relationship('Chapter', back_populates='book')
+    chapter_title = Column(VARCHAR, nullable=False)
+    reviews = relationship('BookReview', back_populates='book')
 
 
-class Chapter(Base):
+class Chapter(BaseContent):
     """chapter model"""
     __tablename__ = 'chapter'
 
-    id = Column(Integer, primary_key=True)
-    title = Column(String, nullable=False)
     content = Column(String)
     book_id = Column(Integer, ForeignKey('book.id'))
     book = relationship('Book', back_populates='chapters')
     paragraphs = relationship('Paragraph', back_populates='chapter')
-
-    created_at = Column(Float, default=time.time)
-    updated_at = Column(Float, default=time.time, onupdate=time.time)
+    paragraphs_title = Column(VARCHAR, nullable=False)
 
 
-class Paragraph(Base):
+class Paragraph(BaseContent):
     """paragraph model"""
     __tablename__ = 'paragraph'
 
-    id = Column(Integer, primary_key=True)
     content = Column(String)
     chapter_id = Column(Integer, ForeignKey('chapter.id'))
     chapter = relationship('Chapter', back_populates='paragraphs')
-    images = relationship('Image', back_populates='paragraph')
+    # images = relationship('Image', back_populates='paragraph')
     translations = relationship('Translation', back_populates='paragraph')
     error_reports = relationship('ErrorReport', back_populates='paragraph')
+    reviews = relationship('ExpertReview', back_populates='paragraph')
 
+
+# class Image(BaseContent):
+#     """image model"""
+#     __tablename__ = 'image'
+#
+#     url = Column(String, nullable=False)
+#     paragraph = relationship('Paragraph', back_populates='images')
+
+
+class Language(Base):
+    """Audit log"""
+    __tablename__ = 'language'
+
+    id = Column(Integer, primary_key=True)
+    action = Column(String(100), nullable=False)
     created_at = Column(Float, default=time.time)
-    updated_at = Column(Float, default=time.time, onupdate=time.time)
+
+    translations = relationship('Translation', back_populates='language')
 
 
-class Translation(Base):
+class Translation(BaseContent):
     """translation model"""
     __tablename__ = 'translation'
 
-    id = Column(Integer, primary_key=True)
-    language = Column(String, nullable=False)
+    language_id = Column(Integer, ForeignKey('language.id'), nullable=False)
+    language = relationship('Language', back_populates='translations')
     content = Column(String)
     paragraph_id = Column(Integer, ForeignKey('paragraph.id'))
     paragraph = relationship('Paragraph', back_populates='translations')
 
-    created_at = Column(Float, default=time.time)
-    updated_at = Column(Float, default=time.time, onupdate=time.time)
-
-
-class Image(Base):
-    """image model"""
-    __tablename__ = 'image'
-
-    id = Column(Integer, primary_key=True)
-    url = Column(String, nullable=False)
-    paragraph_id = Column(Integer, ForeignKey('paragraph.id'))
-    paragraph = relationship('Paragraph', back_populates='images')
-
-    created_at = Column(Float, default=time.time)
-    updated_at = Column(Float, default=time.time, onupdate=time.time)
+    published = Column(Boolean, default=False)
+    checked = Column(Boolean, default=False)

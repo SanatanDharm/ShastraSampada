@@ -5,8 +5,8 @@
 # @File    : __init__.py
 
 """__init__.py File created on 04-03-2023"""
-from .content import Book, Chapter, Image, Paragraph, Translation
-from .evolution import Review
+from .content import Book, Chapter, Paragraph, Translation
+from .evolution import BaseReview, BookReview
 from .feedback import ContentRequest, ErrorReport
 from .user import User
 from .log import AuditLog

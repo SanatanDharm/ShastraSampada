@@ -7,7 +7,7 @@
 """feedback File created on 04-03-2023"""
 import time
 
-from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String, Text, VARCHAR
 from sqlalchemy.orm import relationship
 
 from ..db import Base
@@ -18,7 +18,8 @@ class ErrorReport(Base):
     __tablename__ = 'error_report'
 
     id = Column(Integer, primary_key=True)
-    paragraph_id = Column(Integer, ForeignKey('paragraph.id'))
+    content_table = Column(VARCHAR)
+    content_id = Column(Integer)
     user_id = Column(Integer, ForeignKey('user.id'))
     error_type = Column(String, nullable=False)
     description = Column(String, nullable=False)
@@ -37,8 +38,6 @@ class ContentRequest(Base):
 
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('user.id'), nullable=False)
-    book_id = Column(Integer, ForeignKey('book.id'), nullable=False)
-    chapter_id = Column(Integer, ForeignKey('chapter.id'), nullable=False)
     title = Column(String(100), nullable=False)
     description = Column(Text, nullable=False)
 
