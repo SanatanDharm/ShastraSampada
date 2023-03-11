@@ -1,4 +1,9 @@
 fastapi
 pydentic
+pydantic[email]
 sqlalchemy
 uvicorn
+celery
+jinja2
+bcrypt
+python-dotenv

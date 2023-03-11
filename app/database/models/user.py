@@ -23,15 +23,21 @@ class User(Base):
     __tablename__ = 'user'
 
     id = Column(Integer, primary_key=True)
-    email = Column(String, unique=True, nullable=False)
+    email = Column(String, unique=True, nullable=False, index=True)
+    # UniqueConstraint('book_id', 'slug', name='uq_chapters_book_slug')
     password = Column(String, nullable=False)
     level = Column(Integer, nullable=False, default=1)
 
     role = Column(Enum(Role), default=Role.user, nullable=False)
+
+    # Relations
     error_reports = relationship('ErrorReport', back_populates='user')
+    validations = relationship('ExpertReview', back_populates='user')
+    reviews = relationship('BookReview', back_populates='user')
 
     active = Column(Boolean, default=True)
     verified = Column(Boolean, default=False)
+    verification_key = Column(String, nullable=True)
     suspended = Column(Boolean, default=False)
 
     created_at = Column(Float, default=time.time)

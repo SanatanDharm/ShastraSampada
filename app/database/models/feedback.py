@@ -25,6 +25,7 @@ class ErrorReport(Base):
     description = Column(String, nullable=False)
     is_resolved = Column(Boolean, default=False)
 
+    paragraph_id = Column(Integer, ForeignKey('paragraph.id'))
     paragraph = relationship('Paragraph', back_populates='error_reports')
     user = relationship('User', back_populates='error_reports')
 

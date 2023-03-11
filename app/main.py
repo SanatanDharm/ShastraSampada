@@ -5,39 +5,55 @@
 # @File    : main.py
 
 """main.py File created on 04-03-2023"""
-from typing import List
 
-from fastapi import FastAPI, HTTPException, status
+from dotenv import load_dotenv
+from fastapi import FastAPI
 
 from .database.db import Base, SessionLocal, engine
-from .database.models.user import User
 from .models import UserCreate, UserResponse
+from .operations.database.user import UserOps
+from .operations.email import Emailer
 
+load_dotenv()
 app = FastAPI()
+emailer = Emailer('Shastra Sampada')
 
 Base.metadata.create_all(bind=engine)
 
 # Dependency
-db = SessionLocal()
+session = SessionLocal()
 
 
 # User routes
-@app.get("/users", response_model=List[UserResponse])
-def get_all_users():
-    return db.query(User).all()
+@app.get("/users/{email}", response_model=UserResponse)
+def get_one_users(email: str):
+    """Get one user"""
+    u = UserOps(session, emailer, email)
+    return u.get_user()
+
+
+@app.get("/resend_verification/{email}")
+def resend_verification(email: str):
+    """Get one user"""
+    u = UserOps(session, emailer, email)
+    return u.resend_verification()
+
+
+@app.post("/verify_account/{email}/{token}")
+def verify_account(email: str, token: str):
+    """Get one user"""
+    u = UserOps(session, emailer, email)
+    return u.verify_account(token)
 
 
 @app.post("/users", response_model=UserResponse)
 def create_user(user: UserCreate):
-    get_user = db.query(User).filter(User.email == user.email).first()
-    if get_user:
-        raise HTTPException(status.HTTP_406_NOT_ACCEPTABLE, 'User already exists')
+    """Create one user"""
+    u = UserOps(session, emailer)
     email = user.email
     password = user.password
-    user = User(email=email, password=password)
-    db.add(user)
-    db.commit()
-    db.refresh(user)
+    u.create(email=email, password=password)
+    user = u.get_user()
     return user
 #
 #

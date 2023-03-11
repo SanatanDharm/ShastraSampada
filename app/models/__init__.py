@@ -5,34 +5,30 @@
 # @File    : __init__.py
 
 """__init__.py File created on 04-03-2023"""
-import datetime
-import time
 from typing import Optional
 
 # Models for request and response bodies
-from pydantic import BaseModel
-
-
-class RoleCreate(BaseModel):
-    name: str
+from pydantic import BaseModel, EmailStr
 
 
 class UserCreate(BaseModel):
-    email: str
+    """User creation model"""
+    email: EmailStr
     password: str
     role_id: Optional[int]
 
 
 class UserResponse(BaseModel):
+    """User response model"""
     id: int
-    email: str
+    email: EmailStr
     role_id: Optional[int]
     active: bool
     suspended: bool
     level: int
     verified: bool
-    created_at: float
 
     class Config:
+        """Configuration"""
         orm_mode = True
-        exclude = ['password', 'updated_at']
+        exclude = ['password', 'updated_at', 'verification_key', 'created_at']
