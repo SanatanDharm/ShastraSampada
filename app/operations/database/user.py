@@ -6,7 +6,6 @@
 
 """user.py File created on 11-03-2023"""
 from bcrypt import checkpw, gensalt, hashpw
-from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -15,6 +14,10 @@ from ..email import Emailer
 from ..utils import generate_random_number
 from ...database.enum import Role
 from ...database.models import User
+from ...exceptions.user import (
+    DuplicateUserException, InvalidLoginException, NoUserException,
+    UserReVerificationException
+)
 
 
 class UserOps(BaseOps):
@@ -36,7 +39,7 @@ class UserOps(BaseOps):
             self.email = email
             self.emailer.send_verification_email(email, varification_token)
         except IntegrityError:
-            raise HTTPException(status.HTTP_406_NOT_ACCEPTABLE, 'User already exists')
+            raise DuplicateUserException()
 
     def resend_verification(self):
         """Resend verification email"""
@@ -48,7 +51,7 @@ class UserOps(BaseOps):
             self.emailer.send_verification_email(self.email, varification_token)
             self.commit(user)
             return {'details': 'Verification email sent'}
-        raise HTTPException(status.HTTP_406_NOT_ACCEPTABLE, 'User is already verified')
+        raise UserReVerificationException()
 
     def verify_account(self, raw_token):
         """Verify token"""
@@ -62,19 +65,18 @@ class UserOps(BaseOps):
                 user.verification_key = None
                 self.commit(user)
             else:
-                raise HTTPException(status.HTTP_403_FORBIDDEN, "Invalid varification token")
+                raise InvalidLoginException()
 
             return {'details': 'Verification successfull'}
 
-        raise HTTPException(status.HTTP_406_NOT_ACCEPTABLE, 'User is already verified')
+        raise UserReVerificationException()
 
     def get_user(self):
         """Get one user"""
         user = self.session.query(User).filter_by(email=self.email).first()
         if user:
             return user
-
-        raise HTTPException(status.HTTP_404_NOT_FOUND, 'User does not exists')
+        raise NoUserException()
 
     def set_role(self, role: Role):
         """Set the given role"""
@@ -83,13 +85,19 @@ class UserOps(BaseOps):
         self.commit(user)
         return user
 
-    def authenticate_user(self, email: str, password: str):
+    def authenticate_user(self, password: str):
         """Authenticate user"""
-        user = self.session.query(User).filter_by(email=email).first()
+        user = self.session.query(User).filter_by(email=self.email).first()
         hashed_pwd: str = user.password
 
         success = self.compare_hash(password, hashed_pwd)
         return success
+
+    @property
+    def verified(self) -> bool:
+        """Check if user is verified"""
+        user = self.session.query(User).filter_by(email=self.email).first()
+        return user.verified
 
     @staticmethod
     def get_token() -> str:

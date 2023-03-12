@@ -15,7 +15,12 @@ class UserCreate(BaseModel):
     """User creation model"""
     email: EmailStr
     password: str
-    role_id: Optional[int]
+
+
+class BooleanResponse(BaseModel):
+    """Response model for some operation"""
+    success: bool
+    message: str
 
 
 class UserResponse(BaseModel):

@@ -10,7 +10,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 # create engine
-engine = create_engine('sqlite:///shastrasampada.db', echo=True)
+engine = create_engine('sqlite:///shastrasampada.db')
 
 # create base
 Base = declarative_base()
