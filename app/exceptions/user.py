@@ -24,13 +24,13 @@ class NoUserException(BaseHTTPException):
 
 class DuplicateUserException(BaseHTTPException):
     """User is not found"""
-    _status = status.HTTP_306_RESERVED
+    _status = status.HTTP_406_NOT_ACCEPTABLE
     message = 'User already exist'
 
 
 class UserReVerificationException(BaseHTTPException):
     """User is not found"""
-    _status = status.HTTP_304_NOT_MODIFIED
+    _status = status.HTTP_403_FORBIDDEN
     message = 'User is already verified'
 
 

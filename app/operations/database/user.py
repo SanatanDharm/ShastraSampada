@@ -15,7 +15,7 @@ from ..utils import generate_random_number
 from ...database.enum import Role
 from ...database.models import User
 from ...exceptions.user import (
-    DuplicateUserException, InvalidLoginException, NoUserException,
+    DuplicateUserException, NoUserException,
     UserReVerificationException
 )
 
@@ -38,7 +38,9 @@ class UserOps(BaseOps):
             self.commit(user)
             self.email = email
             self.emailer.send_verification_email(email, varification_token)
+            return True
         except IntegrityError:
+            self.session.rollback()
             raise DuplicateUserException()
 
     def resend_verification(self):
@@ -50,10 +52,11 @@ class UserOps(BaseOps):
             user.verification_key = self.create_hash(varification_token)
             self.emailer.send_verification_email(self.email, varification_token)
             self.commit(user)
-            return {'details': 'Verification email sent'}
+            return True
+        self.session.rollback()
         raise UserReVerificationException()
 
-    def verify_account(self, raw_token):
+    def verify_account(self, raw_token) -> bool:
         """Verify token"""
         user = self.get_user()
         verified = user.verified
@@ -65,27 +68,29 @@ class UserOps(BaseOps):
                 user.verification_key = None
                 self.commit(user)
             else:
-                raise InvalidLoginException()
+                self.session.rollback()
+                raise UserReVerificationException()
 
-            return {'details': 'Verification successfull'}
+            return True
 
+        self.session.rollback()
         raise UserReVerificationException()
 
-    def get_user(self):
+    def get_user(self) -> type[User]:
         """Get one user"""
         user = self.session.query(User).filter_by(email=self.email).first()
         if user:
             return user
         raise NoUserException()
 
-    def set_role(self, role: Role):
+    def set_role(self, role: Role) -> type[User]:
         """Set the given role"""
         user = self.get_user()
         user.role = role
         self.commit(user)
         return user
 
-    def authenticate_user(self, password: str):
+    def authenticate_user(self, password: str) -> bool:
         """Authenticate user"""
         user = self.session.query(User).filter_by(email=self.email).first()
         hashed_pwd: str = user.password
@@ -106,7 +111,7 @@ class UserOps(BaseOps):
         return str(random_number)
 
     @staticmethod
-    def create_hash(row_str):
+    def create_hash(row_str) -> str:
         """Hash given password"""
         row_bytes = row_str.encode('utf-8')
         salt = gensalt()
@@ -115,7 +120,7 @@ class UserOps(BaseOps):
         return hashed_str
 
     @staticmethod
-    def compare_hash(row_str, hashed_str):
+    def compare_hash(row_str, hashed_str) -> bool:
         """Compare given password"""
         row_bytes = row_str.encode('utf-8')
         hashed_bytes = hashed_str.encode()

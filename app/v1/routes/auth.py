@@ -5,6 +5,8 @@
 # @File    : auth
 
 """auth File created on 12-03-2023"""
+import datetime
+
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 
@@ -37,9 +39,11 @@ async def login(data: LogIn) -> JSONResponse:
             user_obj = user.get_user()
             data = {
                 'id': user_obj.id,
+                'role': user_obj.role.name,
                 'email': user_obj.email,
-                'level': user_obj.level,
-                'active': user_obj.active
+                'active': user_obj.active,
+                'verified': user_obj.verified,
+                'tocken_created': str(datetime.datetime.now())
             }
             token = jwt_encode(data)
 
@@ -67,12 +71,15 @@ def create_user(user: UserCreate):
 @auth_router.get("/resend_verification/{email}", response_model=BooleanResponse)
 def resend_verification(email: str):
     """Resend verification email"""
-    u = UserOps(session, emailer, email)
-    sent: bool = u.resend_verification()
-    return {
-        'success': sent,
-        'message': "Verification email sent"
-    }
+    try:
+        u = UserOps(session, emailer, email)
+        sent: bool = u.resend_verification()
+        return {
+            'success': sent,
+            'message': "Verification email sent"
+        }
+    except NoUserException:
+        raise InvalidLoginException()
 
 
 @auth_router.post("/verify_account/{email}/{token}", response_model=BooleanResponse)

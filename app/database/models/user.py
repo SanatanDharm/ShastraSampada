@@ -35,10 +35,19 @@ class User(Base):
     validations = relationship('ExpertReview', back_populates='user')
     reviews = relationship('BookReview', back_populates='user')
 
+    # User activation status
     active = Column(Boolean, default=True)
+
+    # User verification status
     verified = Column(Boolean, default=False)
     verification_key = Column(String, nullable=True)
+    verification_key_time = Column(Float, nullable=True)
+    verification_attempt = Column(Integer, default=0)
+
+    # User suspension status
     suspended = Column(Boolean, default=False)
+    suspention_reason = Column(String, nullable=True)
+    suspention_expiry = Column(Float, nullable=True)
 
     created_at = Column(Float, default=time.time)
     updated_at = Column(Float, default=time.time, onupdate=time.time)

@@ -8,14 +8,6 @@
 from pydantic import BaseModel, EmailStr
 
 
-class JwtModel(BaseModel):
-    """Model for JWT"""
-    id: int
-    email: EmailStr
-    level: int
-    active: bool
-
-
 class LogIn(BaseModel):
     """Login Model"""
     email: EmailStr
