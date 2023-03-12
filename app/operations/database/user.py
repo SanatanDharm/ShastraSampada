@@ -80,6 +80,7 @@ class UserOps(BaseOps):
         """Get one user"""
         user = self.session.query(User).filter_by(email=self.email).first()
         if user:
+            user.role = user.role.name
             return user
         raise NoUserException()
 

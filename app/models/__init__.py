@@ -5,7 +5,6 @@
 # @File    : __init__.py
 
 """__init__.py File created on 04-03-2023"""
-from typing import Optional
 
 # Models for request and response bodies
 from pydantic import BaseModel, EmailStr
@@ -27,7 +26,7 @@ class UserResponse(BaseModel):
     """User response model"""
     id: int
     email: EmailStr
-    role_id: Optional[int]
+    role: str
     active: bool
     suspended: bool
     level: int
@@ -36,4 +35,4 @@ class UserResponse(BaseModel):
     class Config:
         """Configuration"""
         orm_mode = True
-        exclude = ['password', 'updated_at', 'verification_key', 'created_at']
+        # exclude = ['password', 'updated_at', 'verification_key', 'created_at']
