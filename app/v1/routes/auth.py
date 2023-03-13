@@ -105,3 +105,19 @@ async def my_profile(jwt_details=Depends(details_from_jwt)):
         return user
     except NoUserException:
         raise InvalidTokenException()
+
+
+@auth_router.post('/logout', response_model=BooleanResponse)
+async def log_out(jwt_details=Depends(details_from_jwt)):
+    """Get current user"""
+    try:
+        u = UserOps(session, emailer, jwt_details['email'])
+        u.validate_token(jwt_details)
+        u.remove_token()
+
+        return {
+            'success': True,
+            'message': "Logout success"
+        }
+    except NoUserException:
+        raise InvalidTokenException()

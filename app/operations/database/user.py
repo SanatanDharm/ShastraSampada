@@ -115,6 +115,12 @@ class UserOps(BaseOps):
         user.token_key = key
         self.commit(user)
 
+    def remove_token(self):
+        """Authenticate user"""
+        user = self.get_user()
+        user.token_key = None
+        self.commit(user)
+
     def validate_token(self, web_token: dict):
         """Authenticate user"""
         try:
