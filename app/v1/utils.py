@@ -12,7 +12,7 @@ from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from jwt import ExpiredSignatureError, InvalidSignatureError
 
-from app.exceptions.user import ExpiredTokenException, InvalidTokenException, NotLoggedinException
+from ..exceptions.user import ExpiredTokenException, InvalidTokenException, NotLoggedinException
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='v1/auth/login')
 __secret = os.environ.get('JWT_SECRET_KEY')
@@ -32,7 +32,7 @@ def jwt_decode(token):
     return details
 
 
-def get_user_from_jwt(token: str = Depends(oauth2_scheme)) -> dict:
+def details_from_jwt(token: str = Depends(oauth2_scheme)) -> dict:
     """Get user from JWT"""
     try:
         details = jwt_decode(token)

@@ -6,13 +6,14 @@
 
 """auth File created on 12-03-2023"""
 import datetime
+import uuid
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 
-from ..utils import get_user_from_jwt, jwt_encode
+from ..utils import details_from_jwt, jwt_encode
 from ...database.db import SessionLocal
-from ...exceptions.user import InvalidLoginException, NoUserException, UserNotVerifiedException
+from ...exceptions.user import InvalidLoginException, InvalidTokenException, NoUserException, UserNotVerifiedException
 from ...models import BooleanResponse, UserCreate, UserResponse
 from ...models.user import LogIn
 from ...operations.database.user import UserOps
@@ -37,13 +38,16 @@ async def login(data: LogIn) -> JSONResponse:
             raise UserNotVerifiedException()
         if authentic:
             user_obj = user.get_user()
+            token_key = uuid.uuid4().hex
+            user.set_token(token_key)
             data = {
                 'id': user_obj.id,
                 'role': user_obj.role.name,
                 'email': user_obj.email,
                 'active': user_obj.active,
                 'verified': user_obj.verified,
-                'tocken_created': str(datetime.datetime.now())
+                'tocken_created': str(datetime.datetime.now()),
+                'token_key': token_key
             }
             token = jwt_encode(data)
 
@@ -71,15 +75,12 @@ def create_user(user: UserCreate):
 @auth_router.get("/resend_verification/{email}", response_model=BooleanResponse)
 def resend_verification(email: str):
     """Resend verification email"""
-    try:
-        u = UserOps(session, emailer, email)
-        sent: bool = u.resend_verification()
-        return {
-            'success': sent,
-            'message': "Verification email sent"
-        }
-    except NoUserException:
-        raise InvalidLoginException()
+    u = UserOps(session, emailer, email)
+    sent: bool = u.resend_verification()
+    return {
+        'success': sent,
+        'message': "Verification email sent"
+    }
 
 
 @auth_router.post("/verify_account/{email}/{token}", response_model=BooleanResponse)
@@ -90,13 +91,17 @@ def verify_account(email: str, token: str):
 
     return {
         'success': verified,
-        'message': "Verification email sent"
+        'message': "Account verified"
     }
 
 
 @auth_router.get('/profile', response_model=UserResponse)
-async def my_profile(user=Depends(get_user_from_jwt)):
+async def my_profile(jwt_details=Depends(details_from_jwt)):
     """Get current user"""
-    u = UserOps(session, emailer, user['email'])
-    user = u.get_user()
-    return user
+    try:
+        u = UserOps(session, emailer, jwt_details['email'])
+        u.validate_token(jwt_details)
+        user = u.get_user()
+        return user
+    except NoUserException:
+        raise InvalidTokenException()

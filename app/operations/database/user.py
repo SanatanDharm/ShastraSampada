@@ -5,6 +5,8 @@
 # @File    : user.py
 
 """user.py File created on 11-03-2023"""
+import time
+
 from bcrypt import checkpw, gensalt, hashpw
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -15,8 +17,8 @@ from ..utils import generate_random_number
 from ...database.enum import Role
 from ...database.models import User
 from ...exceptions.user import (
-    DuplicateUserException, NoUserException,
-    UserReVerificationException
+    DuplicateUserException, InvalidTokenException, NoUserException,
+    UserReVerificationException, VerificationKeyExistsException, VerificationKeyExpiredException
 )
 
 
@@ -34,7 +36,11 @@ class UserOps(BaseOps):
             varification_token = self.get_token()
             hashed_token = self.create_hash(varification_token)
             hashed_password = self.create_hash(password)
-            user = User(email=email, password=hashed_password, verification_key=hashed_token)
+            validity = time.time() + 60 * 10
+            user = User(
+                email=email, password=hashed_password, verification_key=hashed_token,
+                verification_key_time=validity
+            )
             self.commit(user)
             self.email = email
             self.emailer.send_verification_email(email, varification_token)
@@ -47,9 +53,14 @@ class UserOps(BaseOps):
         """Resend verification email"""
         user = self.get_user()
         verified = user.verified
+        validity = user.verification_key_time
         if not verified:
+            if validity > time.time():
+                raise VerificationKeyExistsException()
             varification_token = self.get_token()
+            validity = time.time() + 30
             user.verification_key = self.create_hash(varification_token)
+            user.verification_key_time = validity
             self.emailer.send_verification_email(self.email, varification_token)
             self.commit(user)
             return True
@@ -60,7 +71,10 @@ class UserOps(BaseOps):
         """Verify token"""
         user = self.get_user()
         verified = user.verified
+        validity = user.verification_key_time
         if not verified:
+            if validity < time.time():
+                raise VerificationKeyExpiredException()
             hashed_token = user.verification_key
             verified = self.compare_hash(raw_token, hashed_token)
             if verified:
@@ -70,17 +84,13 @@ class UserOps(BaseOps):
             else:
                 self.session.rollback()
                 raise UserReVerificationException()
-
             return True
-
-        self.session.rollback()
         raise UserReVerificationException()
 
     def get_user(self) -> type[User]:
         """Get one user"""
         user = self.session.query(User).filter_by(email=self.email).first()
         if user:
-            user.role = user.role.name
             return user
         raise NoUserException()
 
@@ -93,11 +103,29 @@ class UserOps(BaseOps):
 
     def authenticate_user(self, password: str) -> bool:
         """Authenticate user"""
-        user = self.session.query(User).filter_by(email=self.email).first()
+        user = self.get_user()
         hashed_pwd: str = user.password
 
         success = self.compare_hash(password, hashed_pwd)
         return success
+
+    def set_token(self, key: str):
+        """Authenticate user"""
+        user = self.get_user()
+        user.token_key = key
+        self.commit(user)
+
+    def validate_token(self, web_token: dict):
+        """Authenticate user"""
+        try:
+            user = self.get_user()
+            db_token: str = user.token_key
+
+            success = db_token == web_token['token_key']
+            if not success:
+                raise InvalidTokenException()
+        except Exception:
+            raise InvalidTokenException()
 
     @property
     def verified(self) -> bool:

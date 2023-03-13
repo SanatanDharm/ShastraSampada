@@ -49,5 +49,8 @@ class User(Base):
     suspention_reason = Column(String, nullable=True)
     suspention_expiry = Column(Float, nullable=True)
 
+    # JWT validation
+    token_key = Column(String, nullable=True)
+
     created_at = Column(Float, default=time.time)
     updated_at = Column(Float, default=time.time, onupdate=time.time)

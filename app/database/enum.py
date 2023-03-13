@@ -24,8 +24,16 @@ class ContentRequestStatus:
 
 class Role(str, Enum):
     """role model"""
-    user = 1
-    operator = 2
-    expert = 3
-    moderator = 4
-    admin = 5
+    user = 'user'
+    operator = 'operator'
+    expert = 'expert'
+    moderator = 'moderator'
+    admin = 'admin'
+
+# class Role(str, Enum):
+#     """role model"""
+#     user = 1
+#     operator = 2
+#     expert = 3
+#     moderator = 4
+#     admin = 5

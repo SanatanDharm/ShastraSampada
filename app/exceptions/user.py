@@ -34,6 +34,18 @@ class UserReVerificationException(BaseHTTPException):
     message = 'User is already verified'
 
 
+class VerificationKeyExistsException(BaseHTTPException):
+    """User is not found"""
+    _status = status.HTTP_403_FORBIDDEN
+    message = 'Varification key exist'
+
+
+class VerificationKeyExpiredException(BaseHTTPException):
+    """User is not found"""
+    _status = status.HTTP_406_NOT_ACCEPTABLE
+    message = 'Varification key expired'
+
+
 class UserNotVerifiedException(BaseHTTPException):
     """User is not found"""
     _status = status.HTTP_403_FORBIDDEN
